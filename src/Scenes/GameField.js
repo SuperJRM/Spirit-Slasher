@@ -17,16 +17,14 @@ class GameField extends Phaser.Scene {
         // Add a tileset to the map, map made in Tiled
         this.tileset = this.map.addTilesetImage("dungeon_tilesetmap_packed", "dungeon_tilesetmap_packed");
 
-        // Create three layers: Ground, Collidable, and Decals
+        // Create three layers: Ground, Collideable, and Decals
         this.groundLayer = this.map.createLayer("Ground_Layer", this.tileset, 0, 0);
         this.groundLayer.setScale(this.scale);
-        this.collidableLayer = this.map.createLayer("Collidable_Layer", this.tileset, 0, 0);
-        this.collidableLayer.setScale(this.scale);
-        this.decalLayer = this.map.createLayer("Decal_Layer", this.tileset, 0, 0);
-        this.decalLayer.setScale(this.scale);
+        this.collideableLayer = this.map.createLayer("Collideable_Layer", this.tileset, 0, 0);
+        this.collideableLayer.setScale(this.scale);
 
-        // Make the Collidable_Layer have the collides property
-        this.collidableLayer.setCollisionByProperty({
+        // Make the Collideable_Layer have the collides property
+        this.collideableLayer.setCollisionByProperty({
             collides: true
         });
 
@@ -39,8 +37,8 @@ class GameField extends Phaser.Scene {
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
 
-        // Make player avatar collide with collidable layer
-        this.physics.add.collider(my.sprite.player, this.collidableLayer);
+        // Make player avatar collide with collideable layer
+        this.physics.add.collider(my.sprite.player, this.collideableLayer);
 
         // set up Phaser-provided cursor key input
         cursors = this.input.keyboard.createCursorKeys();
@@ -60,20 +58,20 @@ class GameField extends Phaser.Scene {
         // https://newdocs.phaser.io/docs/3.80.0/focus/Phaser.Tilemaps.Tilemap-createFromObjects
 
         // Add animation for fire
-        this.fire = this.map.createFromObjects("Objects", {
-            name: "fireTop",
-            key: "dungeon_tilesetmap_packed"
-        });
+        // this.fire = this.map.createFromObjects("Objects", {
+        //     name: "fireTop",
+        //     key: "dungeon_tilesetmap_packed"
+        // });
 
-        this.anims.create({
-            key: "fireAnimation",
-            frames: [
-                { key: "dungeon_tilesetmap_packed", frame: 151 },
-                { key: "dungeon_tilesetmap_packed", frame: 152 }
-            ],
-            frameRate: 5,
-            repeat: -1 // Infinitely
-        });
+        // this.anims.create({
+        //     key: "fireAnimation",
+        //     frames: [
+        //         { key: "dungeon_tilesetmap_packed", frame: 151 },
+        //         { key: "dungeon_tilesetmap_packed", frame: 152 }
+        //     ],
+        //     frameRate: 5,
+        //     repeat: -1 // Infinitely
+        // });
 
         // Create a Phaser group out of the array this.coins
         // This will be used for collision detection below.

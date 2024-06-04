@@ -8,7 +8,6 @@ class Load extends Phaser.Scene {
 
         // Load characters spritesheet
         this.load.atlas("platformer_characters", "tilemap-characters-packed.png", "tilemap-characters-packed.json");
-        this.load.image("enemy", "tile_0009.png");
 
         // Load tilemap information
         this.load.image("dungeon_tilesetmap_packed", "dungeon_tilesetmap_packed.png");                         // Packed tilemap
