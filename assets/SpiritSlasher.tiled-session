@@ -1,12 +1,26 @@
 {
-    "activeFile": "",
+    "activeFile": "gameFieldMap.tmj",
     "expandedProjectPaths": [
+        "."
     ],
     "fileStates": {
+        "gameFieldMap.tmj": {
+            "scale": 0.9440625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 400.3972194637537,
+                "y": 160.4766633565045
+            }
+        },
+        "gameFieldMap.tmj#dungeon_tileset_packed": {
+            "scaleInDock": 1
+        }
     },
     "openFiles": [
+        "gameFieldMap.tmj"
     ],
     "project": "SpiritSlasher.tiled-project",
     "recentFiles": [
+        "gameFieldMap.tmj"
     ]
 }

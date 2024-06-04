@@ -28,20 +28,32 @@ class GameField extends Phaser.Scene {
             collides: true
         });
 
-        my.sprite.enemy = [];
-
-        my.sprite.enemy.push(this.add.sprite(
-            480, 480, "enemy").setScale(this.scale));
-
         // Set up player avatar
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
+
+        my.sprite.enemy = [];
+
+        for (let i = 0; i<10; i++) {
+            let enemyX = Math.floor(Math.random() * this.map.widthInPixels*3);
+            let enemyY = Math.floor(Math.random() * this.map.heightInPixels*3);
+            //if ((enemyX < my.sprite.player.x-game.config.width/2 || enemyX > my.sprite.player.x-game.config.width/2) &&
+            // (enemyY < my.sprite.player.y-game.config.height/2 || enemyY > my.sprite.player.y+game.config.height/2)) {
+                my.sprite.enemy.push(this.add.sprite(enemyX, enemyY, "platformer_characters", "tile_0000.png").setScale(this.scale));
+            //}
+        }
 
         // Make player avatar collide with collideable layer
         this.physics.add.collider(my.sprite.player, this.collideableLayer);
 
         // set up Phaser-provided cursor key input
         cursors = this.input.keyboard.createCursorKeys();
+
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels*3, this.map.heightInPixels*3);
+        //this.cameras.main.setBounds(0, 0, 10000, this.map.heightInPixels);
+        this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25); // (target, [,roundPixels][,lerpX][,lerpY])
+        this.cameras.main.setDeadzone(50, 50);
+        this.cameras.main.setZoom(this.SCALE);
 
         /* debug key listener (assigned to D key)
         this.input.keyboard.on('keydown-D', () => {

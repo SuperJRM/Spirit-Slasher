@@ -23,8 +23,8 @@ let config = {
             }
         }
     },
-    width: 1280,
-    height: 1280,
+    width: 1440,
+    height: 900,
     scene: [Load, GameField]
 }
 
