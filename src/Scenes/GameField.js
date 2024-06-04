@@ -5,31 +5,42 @@ class GameField extends Phaser.Scene {
 
     init() {
         // variables and settings
-        this.playerSpeed = 2
+        this.playerSpeed = 5.0,
+        this.scale = 3.0
     }
 
     create() {
-        // Create a new tilemap game object which uses 8x8 pixel tiles, and is
+        // Create a new tilemap game object which uses 16x16 pixel tiles, and is
         // 29 tiles wide and 259 tiles tall.
-        this.map = this.add.tilemap("gameFieldMap", 8, 8, 20, 20);
+        this.map = this.add.tilemap("gameFieldMap", 16, 16, 40, 20);
 
-        // Add a tileset to the map
-        // First parameter: name we gave the tileset in Tiled
-        // Second parameter: key for the tilesheet (from this.load.image in Load.js)
-        this.tileset = this.map.addTilesetImage("colored_tilemap_packed", "colored_tilemap_packed");
+        // Add a tileset to the map, map made in Tiled
+        this.tileset = this.map.addTilesetImage("dungeon_tilesetmap_packed", "dungeon_tilesetmap_packed");
 
-        // Create a layer
-        this.groundLayer = this.map.createLayer("Tile Layer 1", this.tileset, 0, 0);
-        this.groundLayer.setScale(8.0);
+        // Create three layers: Ground, Collidable, and Decals
+        this.groundLayer = this.map.createLayer("Ground_Layer", this.tileset, 0, 0);
+        this.groundLayer.setScale(this.scale);
+        this.collidableLayer = this.map.createLayer("Collidable_Layer", this.tileset, 0, 0);
+        this.collidableLayer.setScale(this.scale);
+        this.decalLayer = this.map.createLayer("Decal_Layer", this.tileset, 0, 0);
+        this.decalLayer.setScale(this.scale);
+
+        // Make the Collidable_Layer have the collides property
+        this.collidableLayer.setCollisionByProperty({
+            collides: true
+        });
 
         my.sprite.enemy = [];
 
         my.sprite.enemy.push(this.add.sprite(
-            480, 480, "enemy").setScale(8));
+            480, 480, "enemy").setScale(this.scale));
 
-        // set up player avatar
+        // Set up player avatar
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
+
+        // Make player avatar collide with collidable layer
+        this.physics.add.collider(my.sprite.player, this.collidableLayer);
 
         // set up Phaser-provided cursor key input
         cursors = this.input.keyboard.createCursorKeys();
@@ -40,6 +51,32 @@ class GameField extends Phaser.Scene {
             this.physics.world.debugGraphic.clear()
         }, this); */
 
+        
+        // Finished: Add createFromObjects here
+        // Find coins in the "Objects" layer in Phaser
+        // Look for them by finding objects with the name "coin"
+        // Assign the coin texture from the tilemap_sheet sprite sheet
+        // Phaser docs:
+        // https://newdocs.phaser.io/docs/3.80.0/focus/Phaser.Tilemaps.Tilemap-createFromObjects
+
+        // Add animation for fire
+        this.fire = this.map.createFromObjects("Objects", {
+            name: "fireTop",
+            key: "dungeon_tilesetmap_packed"
+        });
+
+        this.anims.create({
+            key: "fireAnimation",
+            frames: [
+                { key: "dungeon_tilesetmap_packed", frame: 151 },
+                { key: "dungeon_tilesetmap_packed", frame: 152 }
+            ],
+            frameRate: 5,
+            repeat: -1 // Infinitely
+        });
+
+        // Create a Phaser group out of the array this.coins
+        // This will be used for collision detection below.
     }
 
     update() {
