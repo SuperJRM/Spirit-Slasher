@@ -15,7 +15,7 @@ class GameField extends Phaser.Scene {
         this.map = this.add.tilemap("gameFieldMap", 16, 16, 40, 20);
 
         // Add a tileset to the map, map made in Tiled
-        this.tileset = this.map.addTilesetImage("dungeon_tilesetmap_packed", "dungeon_tilesetmap_packed");
+        this.tileset = this.map.addTilesetImage("dungeon_tileset_packed", "dungeon_tilesetmap_packed");
 
         // Create three layers: Ground, Collideable, and Decals
         this.groundLayer = this.map.createLayer("Ground_Layer", this.tileset, 0, 0);
