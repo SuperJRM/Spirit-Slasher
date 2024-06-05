@@ -12,6 +12,9 @@ class Load extends Phaser.Scene {
         // Load tilemap information
         this.load.image("dungeon_tilesetmap_packed", "dungeon_tilesetmap_packed.png");                         // Packed tilemap
         this.load.tilemapTiledJSON("gameFieldMap", "gameFieldMap.tmj");   // Tilemap in JSON
+
+        // Load items
+        this.load.image("item", "gun.png");
     }
 
     create() {
