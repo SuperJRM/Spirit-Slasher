@@ -8,6 +8,8 @@ class GameField extends Phaser.Scene {
         this.playerSpeed = 5.0, // Default: 5.0
         this.scale = 3.0, // Default: 3.0
         this.itemSpawnSpeed = 10000 // Default: 10000 (10 seconds)
+        this.enemySpawnSpeed = 1000;
+        this.wave = 0;
 
         // Item names
         this.items = ["Gun"];
@@ -36,6 +38,7 @@ class GameField extends Phaser.Scene {
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
 
+        // Test enemy spawn
         my.sprite.enemy = [];
 
         for (let i = 0; i<10; i++) {
@@ -46,6 +49,38 @@ class GameField extends Phaser.Scene {
                 my.sprite.enemy.push(this.add.sprite(enemyX, enemyY, "platformer_characters", "tile_0000.png").setScale(this.scale));
             //}
         }
+
+        // Enemy spawn w/groups
+        /*my.sprite.enemyGroup = this.add.group(
+            {
+            defaultKey: "bat",
+            health: 1
+            },
+            {
+            defaultKey: "skeleton",
+            health: 3
+            },
+            {
+            defaultKey: "zombie",
+            health: 5
+            }
+        )
+
+        enemyTypes = {
+            bat: {
+            defaultKey: "bat",
+            health: 1
+            },
+            skeleton: {
+            defaultKey: "skeleton",
+            health: 3
+            },
+            zombie: {
+            defaultKey: "zombie",
+            health: 5
+            }
+        }
+        */
 
         // Make player avatar collide with collideable layer
         this.physics.add.collider(my.sprite.player, this.collideableLayer);
@@ -123,6 +158,24 @@ class GameField extends Phaser.Scene {
                 } else {
                     console.error("Player or item is undefined.");
                 }
+            },
+            callbackScope: this,
+            loop: true // Repeat
+        });
+
+        this.enemySpawnTimer = this.time.addEvent({
+            delay: this.enemySpawnSpeed, // Default is 10000 = 10 seconds
+            callback: () => {
+                // Randomly generate position for the item within the game world
+                const enemyX = Phaser.Math.RND.between(0, this.game.config.width);
+                const enemyY = Phaser.Math.RND.between(0, this.game.config.height);
+                const type = enemyTypes[this.wave];
+
+                if (enemyX > my.sprite.player.x + 720 && enemyX < my.sprite.player.x - 720 
+                    && enemyY > my.sprite.player.y + 450 && enemyY < my.sprite.player.y - 450) {
+                        const enemySpawn = my.sprite.enemyGroup.create(enemyX, enemyY, type.key);
+                        enemySpawn.health = type.health;
+                    }
             },
             callbackScope: this,
             loop: true // Repeat
