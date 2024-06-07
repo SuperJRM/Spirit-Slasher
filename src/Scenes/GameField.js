@@ -163,7 +163,7 @@ class GameField extends Phaser.Scene {
             loop: true // Repeat
         });
 
-        this.enemySpawnTimer = this.time.addEvent({
+        /*this.enemySpawnTimer = this.time.addEvent({
             delay: this.enemySpawnSpeed, // Default is 10000 = 10 seconds
             callback: () => {
                 // Randomly generate position for the item within the game world
@@ -180,6 +180,7 @@ class GameField extends Phaser.Scene {
             callbackScope: this,
             loop: true // Repeat
         });
+        */
     }
 
     update() {
