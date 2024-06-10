@@ -7,7 +7,9 @@ class GameField extends Phaser.Scene {
         // variables and settings
         this.playerSpeed = 5.0, // Default: 5.0
         this.scale = 3.0, // Default: 3.0
-        this.itemSpawnSpeed = 10000 // Default: 10000 (10 seconds)
+        this.itemSpawnSpeed = 1000 // Default: 10000 (10 seconds)
+        this.health = 3;
+        this.maxHealth = 3;
         this.enemyX = 32;
         this.enemyY = 32;
         this.enemySpawnSpeed = 1000;
@@ -16,18 +18,19 @@ class GameField extends Phaser.Scene {
         this.waveSpeed = 60000;
 
         // Item names
-        this.items = ["Gun"];
+        this.items = ["Gun", "Fireworks"];
     }
 
     create() {
         // Create a new tilemap game object which uses 16x16 pixel tiles, and is
         // 29 tiles wide and 259 tiles tall.
-        this.map = this.add.tilemap("gameFieldMap", 16, 16, 40, 20);
+        this.map = this.add.tilemap("gameFieldMap", 16, 16, 80, 20);
 
         // Add a tileset to the map, map made in Tiled
         this.tileset = this.map.addTilesetImage("dungeon_tileset_packed", "dungeon_tilesetmap_packed");
 
-        // Create two layers: Ground, Collideable
+        // Create two layers: Ground and Collideable
+        // Collideable only layer with physics
         this.groundLayer = this.map.createLayer("Ground_Layer", this.tileset, 0, 0);
         this.groundLayer.setScale(this.scale);
         this.collideableLayer = this.map.createLayer("Collideable_Layer", this.tileset, 0, 0);
@@ -164,6 +167,91 @@ class GameField extends Phaser.Scene {
             loop: true // Repeat
         });
 
+        // Gun Item
+        // Weapon: Shoot a projectile in the direction the player is facing every 3 seconds.
+        // Each projectile deals 1 damage and pierces through enemies.
+        // Consecutive pickups make this deal 1 more damage and makes faster bullets.
+        this.gunTimer = this.time.addEvent({
+            delay: 3000, // Default is 3000 = 3 seconds
+            callback: () => {
+                let gunCount = this.playerInventory["Gun"]; // Copies of Item
+
+                if (this.playerInventory.hasOwnProperty("Gun")) { // Check if Item is owned
+                    const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
+                    projectile.setVelocity(200 + ((gunCount - 1) * 50), 0);
+
+                    this.physics.add.overlap(projectile, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (projectile, enemy) => {
+                        enemy.health -= 1;
+                        projectile.destroy();
+                    });
+                }
+            },
+            callbackScope: this,
+            loop: true // Repeat
+        });
+
+        // Fireworks Item
+        // Weapon: Shoot 6 projectiles all around the player once every 6 seconds.
+        // Each projectile deals 1 damage.
+        // Consecutive pickups add extra shots.
+        this.fireworksTimer = this.time.addEvent({
+            delay: 6000, // Default is 6000 = 6 seconds
+            callback: () => {
+                let fireworksCount = this.playerInventory["Fireworks"]; // Copies of Item
+                const projectileCount = 6 + ((fireworksCount - 1) * 3);
+                const angleCount = (2 * Math.PI) / projectileCount;
+
+                if (this.playerInventory.hasOwnProperty("Fireworks")) { // Check if Item is owned
+                    for (let i = 0; i < projectileCount; i++) {
+                        const angle = i * angleCount;
+                        const velocityX = Math.cos(angle) * 200;
+                        const velocityY = Math.sin(angle) * 200;
+
+                        const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
+                        projectile.setVelocity(velocityX, velocityY);
+                    }
+                        // this.physics.add.overlap(projectile, my.sprite.skeletonGroup, (projectile, enemy) => {
+                        //     enemy.health -= 1;
+                        //     if (enemy.health <= 0) {
+                        //         enemy.destroy();
+                        //     }
+                        //     projectile.destroy();
+                        // });
+                }
+            },
+            callbackScope: this,
+            loop: true // Repeat
+        });
+
+        // Shotgun Item
+        // Weapon: Shoots 4 bullets in a cone occasionally.
+        // Each projectile deals 1 damage and pierces through enemies.
+        // Consecutive pickups make this deal 1 more damage and makes bullets faster.
+        this.shotgunTimer = this.time.addEvent({
+            delay: 5000, // Delay for occasional shooting, adjust as needed
+            callback: () => {
+                let shotgunCount = this.playerInventory["Shotgun"]; // Copies of Item
+
+                if (this.playerInventory.hasOwnProperty("Shotgun")) { // Check if Item is owned
+                    // Calculate angle for cone spread (in radians)
+                    const coneSpread = Phaser.Math.DegToRad(30); // Adjust cone spread as needed
+                    const playerX = my.sprite.player.x;
+                    const playerY = my.sprite.player.y;
+
+                    // for (let i = 0; i < 4; i++) {
+
+                        // const bullet = this.physics.add.sprite(playerX, playerY, "heartEmpty");
+                        // bullet.setVelocity(velocityX, velocityY);
+                        // this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
+                            //For later
+                        // });
+                    // }
+                }
+            },
+            callbackScope: this,
+            loop: true // Repeat occasionally
+        });
+
         // Timer that changes wave count
         this.waveTimer = this.time.addEvent({
             delay: this.waveSpeed, // 60000 = 60 seconds
@@ -191,6 +279,17 @@ class GameField extends Phaser.Scene {
             callbackScope: this,
             loop: true // Repeat
         });
+
+        // Creates initial health bar
+        for (let i = 0; i < this.maxHealth ; i++) {
+            let position = 50 + (i * 100);
+            if (this.health < this.maxHealth) {
+                this.add.sprite(200, position, "heartEmpty");
+            }
+            else {
+                this.add.sprite(position, 50, "heart");
+            }
+        }
     }
 
     update() {

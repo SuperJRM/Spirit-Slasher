@@ -15,6 +15,8 @@ class Load extends Phaser.Scene {
 
         // Load items
         this.load.image("item", "gun.png");
+        this.load.image("heart", "heart.png");
+        this.load.image("heart_empty", "heartEmpty.png");
     }
 
     create() {
