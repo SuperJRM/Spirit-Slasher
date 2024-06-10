@@ -16,6 +16,7 @@ class GameField extends Phaser.Scene {
         this.enemySpawnCheck = true;
         this.wave = 1;
         this.waveSpeed = 60000;
+        this.maxBullets = 120;
 
         // Item names
         this.items = ["Gun", "Fireworks"];
@@ -23,7 +24,7 @@ class GameField extends Phaser.Scene {
 
     create() {
         // Create a new tilemap game object which uses 16x16 pixel tiles, and is
-        // 29 tiles wide and 259 tiles tall.
+        // 80 tiles wide and 20 tiles tall.
         this.map = this.add.tilemap("gameFieldMap", 16, 16, 80, 20);
 
         // Add a tileset to the map, map made in Tiled
@@ -44,9 +45,34 @@ class GameField extends Phaser.Scene {
         // Set up player avatar
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
+        my.sprite.bullet = [];
+        //my.sprite.monster = [];
 
+        /* Set up bullets
+        for (let i=0; i < this.maxBullets; i++) {
+            // create a sprite which is offscreen and invisible
+            my.sprite.bullet.push(this.add.sprite(-100, -100, "heartEmpty"));
+            my.sprite.bullet[i].visible = false;
+            my.sprite.bullet[i].active = false;
+        }*/
 
         // Monster Spawn w/Groups:
+        /* Test implementation
+        monsterTypes = {
+            bat: {
+            defaultKey: "bat",
+            health: 1
+            },
+            skeleton: {
+            defaultKey: "skeleton",
+            health: 3
+            },
+            zombie: {
+            defaultKey: "zombie",
+            health: 5
+            }
+        }
+        */
         // Bat:
         my.sprite.batGroup = this.add.group({
             defaultKey: "item",
@@ -59,7 +85,6 @@ class GameField extends Phaser.Scene {
             key: my.sprite.batGroup.defaultKey,
             repeat: my.sprite.batGroup.maxSize-1
         });
-        
         // Skeleton:
         my.sprite.skeletonGroup = this.add.group({
             defaultKey: "item",
@@ -72,7 +97,6 @@ class GameField extends Phaser.Scene {
             key: my.sprite.skeletonGroup.defaultKey,
             repeat: my.sprite.skeletonGroup.maxSize-1
         });
-
         // Zombie:
         my.sprite.zombieGroup = this.add.group({
             defaultKey: "item",
@@ -177,12 +201,15 @@ class GameField extends Phaser.Scene {
                 let gunCount = this.playerInventory["Gun"]; // Copies of Item
 
                 if (this.playerInventory.hasOwnProperty("Gun")) { // Check if Item is owned
-                    const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
-                    projectile.setVelocity(200 + ((gunCount - 1) * 50), 0);
-
-                    this.physics.add.overlap(projectile, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (projectile, enemy) => {
+                    //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
+                    if (my.sprite.bullet.length < this.maxBullets) {
+                        my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+                    }
+                    let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
+                    bullet.setVelocity(200 + ((gunCount - 1) * 50), 0);
+                    this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
                         enemy.health -= 1;
-                        projectile.destroy();
+                        bullet.destroy();
                     });
                 }
             },
@@ -207,8 +234,12 @@ class GameField extends Phaser.Scene {
                         const velocityX = Math.cos(angle) * 200;
                         const velocityY = Math.sin(angle) * 200;
 
-                        const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
-                        projectile.setVelocity(velocityX, velocityY);
+                        //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
+                        if (my.sprite.bullet.length < this.maxBullets) {
+                            my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+                        }
+                        let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
+                        bullet.setVelocity(velocityX, velocityY);
                     }
                         // this.physics.add.overlap(projectile, my.sprite.skeletonGroup, (projectile, enemy) => {
                         //     enemy.health -= 1;
@@ -304,7 +335,7 @@ class GameField extends Phaser.Scene {
         
         if(cursors.right.isDown) {
             // TODO: have the player accelerate to the right
-            if (my.sprite.player.x < (1920+my.sprite.player.displayWidth/2)) {
+            if (my.sprite.player.x < (3840+my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x += this.playerSpeed;
             }
             my.sprite.player.setFlip(true, false);
@@ -321,7 +352,7 @@ class GameField extends Phaser.Scene {
         
         if(cursors.down.isDown) {
             // TODO: have the player accelerate to the right
-            if (my.sprite.player.y < (1920+my.sprite.player.displayHeight/2)) {
+            if (my.sprite.player.y < (960+my.sprite.player.displayHeight/2)) {
                 my.sprite.player.y += this.playerSpeed;
             }
             my.sprite.player.anims.play('walk', true);
@@ -422,5 +453,16 @@ class GameField extends Phaser.Scene {
             }
         }
 
+        // Bullet Despawmning
+        my.sprite.bullet = my.sprite.bullet.filter((bullet) => (bullet.x < (3840+bullet.displayWidth) && bullet.x > -(bullet.displayWidth) 
+        && bullet.y > -(bullet.displayHeight) && bullet.y < (960+bullet.displayHeight)));
     }
+
+    /* A center-radius AABB collision check
+    collides(a, b) {
+        if (Math.abs(a.x - b.x) > (a.displayWidth/2 + b.displayWidth/2)) return false;
+        if (Math.abs(a.y - b.y) > (a.displayHeight/2 + b.displayHeight/2)) return false;
+        return true;
+    }
+    */
 }
