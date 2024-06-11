@@ -16,6 +16,7 @@ class GameField extends Phaser.Scene {
         this.enemySpawnCheck = true;
         this.wave = 1;
         this.waveSpeed = 60000;
+        this.maxMonsters = 100;
         this.maxBullets = 120;
 
         // Item names
@@ -46,7 +47,10 @@ class GameField extends Phaser.Scene {
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
         my.sprite.bullet = [];
-        //my.sprite.monster = [];
+        my.sprite.bats = [];
+        my.sprite.skeletons = [];
+        my.sprite.zombies = [];
+        my.sprite.monster = [my.sprite.bats, my.sprite.skeletons, my.sprite.zombies];
 
         /* Set up bullets
         for (let i=0; i < this.maxBullets; i++) {
@@ -55,60 +59,6 @@ class GameField extends Phaser.Scene {
             my.sprite.bullet[i].visible = false;
             my.sprite.bullet[i].active = false;
         }*/
-
-        // Monster Spawn w/Groups:
-        /* Test implementation
-        monsterTypes = {
-            bat: {
-            defaultKey: "bat",
-            health: 1
-            },
-            skeleton: {
-            defaultKey: "skeleton",
-            health: 3
-            },
-            zombie: {
-            defaultKey: "zombie",
-            health: 5
-            }
-        }
-        */
-        // Bat:
-        my.sprite.batGroup = this.add.group({
-            defaultKey: "item",
-            maxSize: 100,
-            health: 1
-            }
-        )
-        my.sprite.batGroup.createMultiple({
-            active: false,
-            key: my.sprite.batGroup.defaultKey,
-            repeat: my.sprite.batGroup.maxSize-1
-        });
-        // Skeleton:
-        my.sprite.skeletonGroup = this.add.group({
-            defaultKey: "item",
-            maxSize: 100,
-            health: 3
-            }
-        )
-        my.sprite.skeletonGroup.createMultiple({
-            active: false,
-            key: my.sprite.skeletonGroup.defaultKey,
-            repeat: my.sprite.skeletonGroup.maxSize-1
-        });
-        // Zombie:
-        my.sprite.zombieGroup = this.add.group({
-            defaultKey: "item",
-            maxSize: 100,
-            health: 5
-            }
-        )
-        my.sprite.zombieGroup.createMultiple({
-            active: false,
-            key: my.sprite.zombieGroup.defaultKey,
-            repeat: my.sprite.zombieGroup.maxSize-1
-        });
 
         // Make player avatar collide with collideable layer
         this.physics.add.collider(my.sprite.player, this.collideableLayer);
@@ -207,10 +157,10 @@ class GameField extends Phaser.Scene {
                     }
                     let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
                     bullet.setVelocity(200 + ((gunCount - 1) * 50), 0);
-                    this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
+                    /*this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
                         enemy.health -= 1;
                         bullet.destroy();
-                    });
+                    });*/
                 }
             },
             callbackScope: this,
@@ -365,91 +315,69 @@ class GameField extends Phaser.Scene {
         // Enemy spawning
         if ((this.wave % 3) == 0) {
             if (this.enemySpawnCheck == true) {
-                let zombie = my.sprite.zombieGroup.getFirstDead();
-                if (zombie != null) {
-                    zombie.active = true;
+                if (my.sprite.zombies.length < this.maxMonsters) {
+                    my.sprite.zombies.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    let zombie = my.sprite.zombies[my.sprite.zombies.length-1];
+                    zombie.health = 5;
                     zombie.visible = true;
-                    zombie.x = this.enemyX;
-                    zombie.y = this.enemyY;
                     this.enemySpawnCheck = false;
                 }
             }
-        } 
+        }
         else if ((this.wave % 2) == 0) {
             if (this.enemySpawnCheck == true) {
-                let skeleton = my.sprite.skeletonGroup.getFirstDead();
-                if (skeleton != null) {
-                    skeleton.active = true;
+                if (my.sprite.skeletons.length < this.maxMonsters) {
+                    my.sprite.skeletons.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    let skeleton = my.sprite.skeletons[my.sprite.skeletons.length-1];
+                    skeleton.health = 3;
                     skeleton.visible = true;
-                    skeleton.x = this.enemyX;
-                    skeleton.y = this.enemyY;
                     this.enemySpawnCheck = false;
                 }
             }
         }
         else {
             if (this.enemySpawnCheck == true) {
-                let bat = my.sprite.batGroup.getFirstDead();
-                if (bat != null) {
-                    bat.active = true;
+                if (my.sprite.bats.length < this.maxMonsters) {
+                    my.sprite.bats.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    let bat = my.sprite.bats[my.sprite.bats.length-1];
+                    bat.health = 1;
                     bat.visible = true;
-                    bat.x = this.enemyX;
-                    bat.y = this.enemyY;
                     this.enemySpawnCheck = false;
                 }
             }
         }
 
-        // Check for dead enemies + Movement
-        for (let bat of my.sprite.batGroup.getChildren()) {
-            if (bat.health <= 0) {
-                bat.health = 1;
-                bat.active = false;
-                bat.visible = false;
-            }
-            if (bat.active == true) {
-                if (bat.x < my.sprite.player.x) {
-                    bat.x++;
-                }
-                else {bat.x--;}
-                if (bat.y < my.sprite.player.y) {
-                    bat.y++;
-                }
-                else {bat.y--;}
+        // Enemy Movement
+        for (var i = 0; i < my.sprite.monster.length; i++) {
+            for (var j = 0; j < my.sprite.monster[i].length; j++) {
+                let enemy = my.sprite.monster[i][j];
+                if (enemy.x < my.sprite.player.x) {
+                    enemy.x++;}
+                else {enemy.x--;}
+                    
+                if (enemy.y < my.sprite.player.y) {
+                    enemy.y++;}
+                else {enemy.y--;}
             }
         }
-        for (let skeleton of my.sprite.skeletonGroup.getChildren()) {
-            if (skeleton.health <= 0) {
-                skeleton.health = 3;
-                skeleton.active = false;
-                skeleton.visible = false;
-            }
-            if (skeleton.active == true) {
-                if (skeleton.x < my.sprite.player.x) {
-                    skeleton.x++;
+
+        // Bullet collision
+        for (let bullet of my.sprite.bullet) {
+            for (var i = 0; i < my.sprite.monster.length; i++) {
+                for (var j = 0; j < my.sprite.monster[i].length; j++) {
+                    let enemy = my.sprite.monster[i][j];
+                    if (this.collides(enemy, bullet)) {
+                        //bullet.setVelocity(0)
+                        bullet.x = -100
+                        bullet.y = -100
+                        bullet.destroy();
+                        enemy.health--;
+                        if (enemy.health <= 0) {
+                            enemy.x = -200;
+                            enemy.y = -200
+                            enemy.destroy();}
+                    }
                 }
-                else {skeleton.x--;}
-                if (skeleton.y < my.sprite.player.y) {
-                    skeleton.y++;
-                }
-                else {skeleton.y--;}
-            }
-        }
-        for (let zombie of my.sprite.zombieGroup.getChildren()) {
-            if (zombie.health <= 0) {
-                zombie.health = 5;
-                zombie.active = false;
-                zombie.visible = false;
-            }
-            if (zombie.active == true) {
-                if (zombie.x < my.sprite.player.x) {
-                    zombie.x++;
-                }
-                else {zombie.x--;}
-                if (zombie.y < my.sprite.player.y) {
-                    zombie.y++;
-                }
-                else {zombie.y--;}
             }
         }
 
@@ -458,11 +386,10 @@ class GameField extends Phaser.Scene {
         && bullet.y > -(bullet.displayHeight) && bullet.y < (960+bullet.displayHeight)));
     }
 
-    /* A center-radius AABB collision check
+    // A center-radius AABB collision check
     collides(a, b) {
         if (Math.abs(a.x - b.x) > (a.displayWidth/2 + b.displayWidth/2)) return false;
         if (Math.abs(a.y - b.y) > (a.displayHeight/2 + b.displayHeight/2)) return false;
         return true;
     }
-    */
 }
