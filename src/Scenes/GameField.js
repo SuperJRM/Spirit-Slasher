@@ -5,22 +5,24 @@ class GameField extends Phaser.Scene {
 
     init() {
         // variables and settings
-        this.playerSpeed = 5.0, // Default: 5.0
-        this.scale = 3.0, // Default: 3.0
-        this.itemSpawnSpeed = 1000 // Default: 10000 (10 seconds)
-        this.health = 3;
-        this.maxHealth = 3;
-        this.enemyX = 32;
-        this.enemyY = 32;
-        this.enemySpawnSpeed = 1000;
-        this.enemySpawnCheck = true;
-        this.wave = 1;
-        this.waveSpeed = 60000;
-        this.maxMonsters = 100;
-        this.maxBullets = 120;
+        this.playerSpeed = 5.0; // Default: 5.0
+        this.scale = 3.0; // Default: 3.0
+        this.itemSpawnSpeed = 1000; // Default: 10000 (10 seconds)
+        this.maxHealth = 3; // Default: 3 (3 Hearts)
+        this.enemyX = 32; // Default: 32
+        this.enemyY = 32; // Default: 32
+        this.enemySpawnSpeed = 1000; // Default: 1000
+        this.enemySpawnCheck = true; // Default: true
+        this.wave = 1; // Default: 1
+        this.waveSpeed = 60000; // Default: 60000
+        this.maxMonsters = 100; // Default: 100
+        this.maxBullets = 120; // Default: 120
+        this.defaultInvincibilityTimer = 15; // Default: 15, for 1.5 seconds of invincibility
+        this.moneyChance = 0.2; // Default: 0.2, for 20% chance to drop money
+        this.startingMoney = 5; // Default: 5
 
         // Item names
-        this.items = ["Gun", "Fireworks"];
+        this.items = ["Crystal", "Fireworks", "Rift"];
     }
 
     create() {
@@ -109,97 +111,31 @@ class GameField extends Phaser.Scene {
         // Inventory system that keeps track of what items the player has, and how many
         this.playerInventory = {};
 
-        // Timer that periodically spawns an Item
-        this.spawnTimer = this.time.addEvent({
-            delay: this.itemSpawnSpeed, // Default is 10000 = 10 seconds
-            callback: () => {
-                // Randomly generate position for the item within the game world
-                const x = Phaser.Math.RND.between(0, this.game.config.width);
-                const y = Phaser.Math.RND.between(0, this.game.config.height);
-
-                // Randomly select an item from the this.items array
-                const itemName = this.items[Phaser.Math.RND.between(0, this.items.length - 1)];
-                const item = this.physics.add.sprite(x, y, itemName);
-                
-                // Player collects item when touching the item
-                item.setCollideWorldBounds(true);
-                if (my.sprite.player) {
-                    this.physics.add.overlap(my.sprite.player, item, () => {
-                        item.destroy();
-                        if (!this.playerInventory[itemName]) {
-                            this.playerInventory[itemName] = 0;
-                        }
-                        this.playerInventory[itemName]++;
-
-                        console.log("Item collected! Inventory:", this.playerInventory);
-                    });
-                } else {
-                    console.error("Player or item is undefined.");
-                }
-            },
+        /* Timer that periodically spawns an Item
+         * The Player can touch the Item in the world and pick it up, adding it to inventory */
+        this.spawnItemTimer = this.time.addEvent({
+            delay: this.itemSpawnSpeed,
+            callback: this.spawnItem,
             callbackScope: this,
-            loop: true // Repeat
+            loop: true
         });
 
-        // Gun Item
-        // Weapon: Shoot a projectile in the direction the player is facing every 3 seconds.
-        // Each projectile deals 1 damage and pierces through enemies.
-        // Consecutive pickups make this deal 1 more damage and makes faster bullets.
-        this.gunTimer = this.time.addEvent({
+        /* Timers below will check if Player has the following weapon Items
+         * If they do on check, will shoot a projectile
+         * Dupe Items make the attack more powerful */
+
+        // Shoot Crystal
+        this.crystalTimer = this.time.addEvent({
             delay: 3000, // Default is 3000 = 3 seconds
-            callback: () => {
-                let gunCount = this.playerInventory["Gun"]; // Copies of Item
-
-                if (this.playerInventory.hasOwnProperty("Gun")) { // Check if Item is owned
-                    //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
-                    if (my.sprite.bullet.length < this.maxBullets) {
-                        my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
-                    }
-                    let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
-                    bullet.setVelocity(200 + ((gunCount - 1) * 50), 0);
-                    /*this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
-                        enemy.health -= 1;
-                        bullet.destroy();
-                    });*/
-                }
-            },
+            callback: this.shootCrystal,
             callbackScope: this,
             loop: true // Repeat
         });
 
-        // Fireworks Item
-        // Weapon: Shoot 6 projectiles all around the player once every 6 seconds.
-        // Each projectile deals 1 damage.
-        // Consecutive pickups add extra shots.
+        // Shoot Fireworks
         this.fireworksTimer = this.time.addEvent({
             delay: 6000, // Default is 6000 = 6 seconds
-            callback: () => {
-                let fireworksCount = this.playerInventory["Fireworks"]; // Copies of Item
-                const projectileCount = 6 + ((fireworksCount - 1) * 3);
-                const angleCount = (2 * Math.PI) / projectileCount;
-
-                if (this.playerInventory.hasOwnProperty("Fireworks")) { // Check if Item is owned
-                    for (let i = 0; i < projectileCount; i++) {
-                        const angle = i * angleCount;
-                        const velocityX = Math.cos(angle) * 200;
-                        const velocityY = Math.sin(angle) * 200;
-
-                        //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
-                        if (my.sprite.bullet.length < this.maxBullets) {
-                            my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
-                        }
-                        let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
-                        bullet.setVelocity(velocityX, velocityY);
-                    }
-                        // this.physics.add.overlap(projectile, my.sprite.skeletonGroup, (projectile, enemy) => {
-                        //     enemy.health -= 1;
-                        //     if (enemy.health <= 0) {
-                        //         enemy.destroy();
-                        //     }
-                        //     projectile.destroy();
-                        // });
-                }
-            },
+            callback: this.shootFireworks,
             callbackScope: this,
             loop: true // Repeat
         });
@@ -261,16 +197,23 @@ class GameField extends Phaser.Scene {
             loop: true // Repeat
         });
 
-        // Creates initial health bar
-        for (let i = 0; i < this.maxHealth ; i++) {
-            let position = 50 + (i * 100);
-            if (this.health < this.maxHealth) {
-                this.add.sprite(200, position, "heartEmpty");
-            }
-            else {
-                this.add.sprite(position, 50, "heart");
-            }
-        }
+        // Timer for invincibility frames
+        this.invincibilityFrameTimer = this.time.addEvent({
+            delay: 100, // 100 = 0.1 seconds
+            callback: () => {
+                if (this.invincibilityTimer) { // If invincibilityTimer has a value, go down in value
+                    this.invincibilityTimer--;
+                    my.sprite.player.setVisible(!my.sprite.player.visible); // Make player flicker to show damage
+                } else {
+                    my.sprite.player.setVisible(true); // Make sure player is visible at the end
+                }
+            },
+            callbackScope: this,
+            loop: true // Repeat
+        });
+
+        // Create UI
+        this.createUI();
     }
 
     update() {
@@ -375,15 +318,39 @@ class GameField extends Phaser.Scene {
                         if (enemy.health <= 0) {
                             enemy.x = -200;
                             enemy.y = -200
-                            enemy.destroy();}
+                            enemy.destroy();
+
+                            // Chance for player to get money on kill
+                            if (Math.random() < this.moneyChance) {
+                                my.sprite.player.money++;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Bullet Despawmning
+        // Bullet Despawning
         my.sprite.bullet = my.sprite.bullet.filter((bullet) => (bullet.x < (3840+bullet.displayWidth) && bullet.x > -(bullet.displayWidth) 
         && bullet.y > -(bullet.displayHeight) && bullet.y < (960+bullet.displayHeight)));
+
+        // Update health values and position underneath the player
+        this.updateUI();
+
+        /* When Player makes contact with enemy, Player loses 1 health and starts
+         * an immunity timer to prevent damage */
+        for (let i = 0; i < my.sprite.monster.length; i++) {
+            for (let j = 0; j < my.sprite.monster[i].length; j++) {
+                const enemy = my.sprite.monster[i][j];
+    
+                // Check for collision between player and enemy
+                if (this.collides(my.sprite.player, enemy) && !this.invincibilityTimer) {
+                    // Player collides with enemy, decrement player's health
+                    my.sprite.player.health -= 1;
+                    this.invincibilityTimer = this.defaultInvincibilityTimer;
+                }
+            }
+        }
     }
 
     // A center-radius AABB collision check
@@ -391,5 +358,130 @@ class GameField extends Phaser.Scene {
         if (Math.abs(a.x - b.x) > (a.displayWidth/2 + b.displayWidth/2)) return false;
         if (Math.abs(a.y - b.y) > (a.displayHeight/2 + b.displayHeight/2)) return false;
         return true;
+    }
+
+    // Create the initial health bar and money counter
+    createUI() {
+        // Create a container to hold the hearts
+        this.healthBarContainer = this.add.container();
+
+        for (let i = 0; i < this.maxHealth; i++) {
+            const heart = this.add.sprite(i * 30, 0, "heart").setScale(1.5);
+            this.healthBarContainer.add(heart);
+        }
+
+        this.moneyIcon = this.add.sprite(0, 50, "money").setScale(0.5);
+
+        // Initialize health and money values
+        my.sprite.player.health = this.maxHealth;
+        my.sprite.player.money = this.startingMoney;
+    }
+
+    // Constantly update the health bar and money counter and align below the player
+    updateUI() {
+        // Update health bar based on player's health
+        for (let i = 0; i < this.maxHealth; i++) {
+            const heartSprite = this.healthBarContainer.list[i];
+    
+            if (i < my.sprite.player.health) { // Show full heart for health
+                heartSprite.setTexture("heart");
+            } else { // Show lost heart for health
+                heartSprite.setTexture("heartEmpty");
+            }
+        }
+
+        // Set position of UI directly below player
+        const healthX = my.sprite.player.x - (this.healthBarContainer.width / 2) - 30;
+        const healthY = my.sprite.player.y + 40;
+        this.healthBarContainer.setPosition(healthX, healthY);
+
+        // Set position of money icon below health bar
+        const moneyIconX = healthX + 15;
+        const moneyIconY = healthY + 25;
+        // TODO: Need to add money implementation.
+        this.moneyIcon.setPosition(moneyIconX, moneyIconY);
+    }
+
+    // Spawn a random item in the game world
+    spawnItem() {
+        // Randomly generate position for the item within the game world
+        const x = Phaser.Math.RND.between(0, this.game.config.width);
+        const y = Phaser.Math.RND.between(0, this.game.config.height);
+
+        // Randomly select an item from the this.items array
+        const itemName = this.items[Phaser.Math.RND.between(0, this.items.length - 1)];
+        const item = this.physics.add.sprite(x, y, itemName).setScale(2);
+
+        if (["Fireworks", "Crystal", "Rift"].includes(itemName)) {
+            // TODO: Animations are not correctly working, weirdly shrunk in the top left corner of hitbox.
+            // Define the animation frames
+            const frames = this.anims.generateFrameNumbers(itemName.toLowerCase(), { start: 0, end: 7 });
+    
+            // Create the animation
+            this.anims.create({
+                key: itemName.toLowerCase() + '_animation',
+                frames: frames,
+                frameRate: 10, // Adjust frame rate as needed
+                repeat: -1 // Repeat indefinitely
+            });
+        }
+        item.anims.play(itemName.toLowerCase() + '_animation');
+
+        // Player collects item when touching the item
+        item.setCollideWorldBounds(true);
+        if (my.sprite.player) {
+            this.physics.add.overlap(my.sprite.player, item, () => {
+                item.destroy();
+                if (!this.playerInventory[itemName]) {
+                    this.playerInventory[itemName] = 0;
+                }
+                this.playerInventory[itemName]++;
+    
+                console.log("Item collected! Inventory:", this.playerInventory);
+            });
+        } else {
+            console.error("Player or item is undefined.");
+        }
+    }
+
+    // Crystal Item
+    // Weapon: Shoot a projectile in the direction the player is facing every 3 seconds.
+    // Each projectile deals 1 damage and pierces through enemies.
+    // Consecutive pickups make this deal 1 more damage and makes faster bullets.
+    shootCrystal() {
+        let crystalCount = this.playerInventory["Crystal"]; // Copies of Item
+
+        if (this.playerInventory.hasOwnProperty("Crystal")) { // Check if Item is owned
+            //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
+            if (my.sprite.bullet.length < this.maxBullets) {
+                my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+            }
+            let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
+            bullet.setVelocity(200 + ((crystalCount - 1) * 50), 0);
+        }
+    }
+
+    // Fireworks Item
+    // Weapon: Shoot 6 projectiles all around the player once every 6 seconds.
+    // Each projectile deals 1 damage.
+    // Consecutive pickups add extra shots.
+    shootFireworks() {
+        let fireworksCount = this.playerInventory["Fireworks"]; // Copies of Item
+        const projectileCount = 6 + ((fireworksCount - 1) * 3);
+        const angleCount = (2 * Math.PI) / projectileCount;
+
+        if (this.playerInventory.hasOwnProperty("Fireworks")) { // Check if Item is owned
+            for (let i = 0; i < projectileCount; i++) {
+                const angle = i * angleCount;
+                const velocityX = Math.cos(angle) * 200;
+                const velocityY = Math.sin(angle) * 200;
+
+                if (my.sprite.bullet.length < this.maxBullets) {
+                    my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+                }
+                let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
+                bullet.setVelocity(velocityX, velocityY);
+            }
+        }
     }
 }
