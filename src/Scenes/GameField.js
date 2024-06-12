@@ -18,11 +18,9 @@ class GameField extends Phaser.Scene {
         this.maxMonsters = 100; // Default: 100
         this.maxBullets = 120; // Default: 120
         this.defaultInvincibilityTimer = 15; // Default: 15, for 1.5 seconds of invincibility
-        this.moneyChance = 0.2; // Default: 0.2, for 20% chance to drop money
-        this.startingMoney = 5; // Default: 5
 
         // Item names
-        this.items = ["Crystal", "Fireworks", "Rift"];
+        this.items = ["Crystal", "Fireworks", "Health", "Rift"];
     }
 
     create() {
@@ -140,33 +138,12 @@ class GameField extends Phaser.Scene {
             loop: true // Repeat
         });
 
-        // Shotgun Item
-        // Weapon: Shoots 4 bullets in a cone occasionally.
-        // Each projectile deals 1 damage and pierces through enemies.
-        // Consecutive pickups make this deal 1 more damage and makes bullets faster.
-        this.shotgunTimer = this.time.addEvent({
-            delay: 5000, // Delay for occasional shooting, adjust as needed
-            callback: () => {
-                let shotgunCount = this.playerInventory["Shotgun"]; // Copies of Item
-
-                if (this.playerInventory.hasOwnProperty("Shotgun")) { // Check if Item is owned
-                    // Calculate angle for cone spread (in radians)
-                    const coneSpread = Phaser.Math.DegToRad(30); // Adjust cone spread as needed
-                    const playerX = my.sprite.player.x;
-                    const playerY = my.sprite.player.y;
-
-                    // for (let i = 0; i < 4; i++) {
-
-                        // const bullet = this.physics.add.sprite(playerX, playerY, "heartEmpty");
-                        // bullet.setVelocity(velocityX, velocityY);
-                        // this.physics.add.overlap(bullet, [my.sprite.batGroup, my.sprite.skeletonGroup, my.sprite.zombieGroup], (bullet, enemy) => {
-                            //For later
-                        // });
-                    // }
-                }
-            },
+        // Summon Rift
+        this.riftTimer = this.time.addEvent({
+            delay: 5000, // Default is 5000 = 5 seconds
+            callback: this.summonRift,
             callbackScope: this,
-            loop: true // Repeat occasionally
+            loop: true // Repeat
         });
 
         // Timer that changes wave count
@@ -218,7 +195,6 @@ class GameField extends Phaser.Scene {
 
     update() {
         if(cursors.left.isDown) {
-            // TODO: have the player accelerate to the left
             if (my.sprite.player.x > (my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x -= this.playerSpeed;
             }
@@ -227,7 +203,6 @@ class GameField extends Phaser.Scene {
         } 
         
         if(cursors.right.isDown) {
-            // TODO: have the player accelerate to the right
             if (my.sprite.player.x < (3840+my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x += this.playerSpeed;
             }
@@ -236,7 +211,6 @@ class GameField extends Phaser.Scene {
         } 
         
         if(cursors.up.isDown) {
-            // TODO: have the player accelerate to the right
             if (my.sprite.player.y > (my.sprite.player.displayHeight/2)) {
                 my.sprite.player.y -= this.playerSpeed;
             }
@@ -244,7 +218,6 @@ class GameField extends Phaser.Scene {
         } 
         
         if(cursors.down.isDown) {
-            // TODO: have the player accelerate to the right
             if (my.sprite.player.y < (960+my.sprite.player.displayHeight/2)) {
                 my.sprite.player.y += this.playerSpeed;
             }
@@ -319,11 +292,6 @@ class GameField extends Phaser.Scene {
                             enemy.x = -200;
                             enemy.y = -200
                             enemy.destroy();
-
-                            // Chance for player to get money on kill
-                            if (Math.random() < this.moneyChance) {
-                                my.sprite.player.money++;
-                            }
                         }
                     }
                 }
@@ -360,24 +328,22 @@ class GameField extends Phaser.Scene {
         return true;
     }
 
-    // Create the initial health bar and money counter
+    // Create the initial health bar and item counter
     createUI() {
         // Create a container to hold the hearts
         this.healthBarContainer = this.add.container();
+        this.itemContainer = this.add.container();
 
         for (let i = 0; i < this.maxHealth; i++) {
             const heart = this.add.sprite(i * 30, 0, "heart").setScale(1.5);
             this.healthBarContainer.add(heart);
         }
 
-        this.moneyIcon = this.add.sprite(0, 50, "money").setScale(0.5);
-
-        // Initialize health and money values
+        // Initialize health values
         my.sprite.player.health = this.maxHealth;
-        my.sprite.player.money = this.startingMoney;
     }
 
-    // Constantly update the health bar and money counter and align below the player
+    // Constantly update the health bar and item counter and align below the player
     updateUI() {
         // Update health bar based on player's health
         for (let i = 0; i < this.maxHealth; i++) {
@@ -389,17 +355,38 @@ class GameField extends Phaser.Scene {
                 heartSprite.setTexture("heartEmpty");
             }
         }
+    
+        // Update item icons based on player's inventory
+        this.itemContainer.removeAll(true); // Remove existing item icons
+    
+        let iconX = 0;
 
-        // Set position of UI directly below player
+        for (const itemName in this.playerInventory) {
+            if (this.playerInventory.hasOwnProperty(itemName)) {
+                const itemCount = this.playerInventory[itemName];
+                
+                if (itemCount > 0) { // Check if the item count is greater than 0
+                    // Add the item icon
+                    const itemIcon = this.add.sprite(iconX, 0, itemName).setScale(1.5);
+                    this.itemContainer.add(itemIcon);
+        
+                    // Add the item quantity text
+                    const itemQuantityText = this.add.text(iconX, 20, itemCount.toString(), { fontSize: '16px', fill: '#ffffff' });
+                    this.itemContainer.add(itemQuantityText);
+        
+                    iconX += 23; // Adjust the spacing between item icons as needed
+                }
+            }
+        }
+    
+        // Set position of UI elements directly below player
         const healthX = my.sprite.player.x - (this.healthBarContainer.width / 2) - 30;
         const healthY = my.sprite.player.y + 40;
         this.healthBarContainer.setPosition(healthX, healthY);
-
-        // Set position of money icon below health bar
-        const moneyIconX = healthX + 15;
-        const moneyIconY = healthY + 25;
-        // TODO: Need to add money implementation.
-        this.moneyIcon.setPosition(moneyIconX, moneyIconY);
+    
+        const itemContainerX = healthX;
+        const itemContainerY = healthY + 25;
+        this.itemContainer.setPosition(itemContainerX, itemContainerY);
     }
 
     // Spawn a random item in the game world
@@ -410,27 +397,23 @@ class GameField extends Phaser.Scene {
 
         // Randomly select an item from the this.items array
         const itemName = this.items[Phaser.Math.RND.between(0, this.items.length - 1)];
-        const item = this.physics.add.sprite(x, y, itemName).setScale(2);
+        const item = this.physics.add.sprite(x, y, itemName).setScale(3);
 
-        if (["Fireworks", "Crystal", "Rift"].includes(itemName)) {
-            // TODO: Animations are not correctly working, weirdly shrunk in the top left corner of hitbox.
-            // Define the animation frames
-            const frames = this.anims.generateFrameNumbers(itemName.toLowerCase(), { start: 0, end: 7 });
-    
-            // Create the animation
-            this.anims.create({
-                key: itemName.toLowerCase() + '_animation',
-                frames: frames,
-                frameRate: 10, // Adjust frame rate as needed
-                repeat: -1 // Repeat indefinitely
-            });
+        if (["Crystal", "Fireworks", "Health", "Rift"].includes(itemName)) {
+            // Play the corresponding animation
+            item.anims.play(itemName.toLowerCase() + '_animation');
         }
-        item.anims.play(itemName.toLowerCase() + '_animation');
 
         // Player collects item when touching the item
         item.setCollideWorldBounds(true);
         if (my.sprite.player) {
             this.physics.add.overlap(my.sprite.player, item, () => {
+                // Sunshine Item
+                // Upon pickup, restore health to max value
+                if (itemName === "Health") {
+                    my.sprite.player.health = this.maxHealth;
+                    console.log("Player health restored to 3 hearts.");
+                }
                 item.destroy();
                 if (!this.playerInventory[itemName]) {
                     this.playerInventory[itemName] = 0;
@@ -452,12 +435,19 @@ class GameField extends Phaser.Scene {
         let crystalCount = this.playerInventory["Crystal"]; // Copies of Item
 
         if (this.playerInventory.hasOwnProperty("Crystal")) { // Check if Item is owned
-            //const projectile = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y, "heartEmpty");
-            if (my.sprite.bullet.length < this.maxBullets) {
-                my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+            let delay = 0; // Initial delay for the first bullet
+
+            for (let i = 0; i < crystalCount; i++) {
+                setTimeout(() => {
+                    if (my.sprite.bullet.length < this.maxBullets) {
+                        const bullet = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y - (my.sprite.player.displayHeight / 2), "heartEmpty");
+                        bullet.setVelocity(200 + (i * 50), 0);
+                        my.sprite.bullet.push(bullet);
+                    }
+                }, delay);
+
+                delay += 30; // Increase delay for the next bullet
             }
-            let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
-            bullet.setVelocity(200 + ((crystalCount - 1) * 50), 0);
         }
     }
 
@@ -477,10 +467,36 @@ class GameField extends Phaser.Scene {
                 const velocityY = Math.sin(angle) * 200;
 
                 if (my.sprite.bullet.length < this.maxBullets) {
-                    my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "heartEmpty"));
+                    my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "fireworks"));
                 }
                 let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
                 bullet.setVelocity(velocityX, velocityY);
+            }
+        }
+    }
+
+    // Rift Item
+    // Weapon: Summon a random rift at the ground where you stand.
+    // It stays there until an enemy touches it to deal damage, then disappears.
+    // Consecutive pickups make the rift last longer and increase its size, and also how many it can eat
+    summonRift() {
+        let riftCount = this.playerInventory["Rift"]; // Copies of Item
+
+        if (this.playerInventory.hasOwnProperty("Rift")) {
+            for (let i = 0; i < riftCount / 2; i++) {
+                // Add the rift sprite to the bullet array (assuming my.sprite.bullet is an array)
+                my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y - (my.sprite.player.displayHeight / 2), "Rift"));
+            
+                // Get the last added rift sprite
+                let rift = my.sprite.bullet[my.sprite.bullet.length - 1];
+                rift.anims.play("rift_animation");
+                rift.setScale(5 + (2 * (riftCount - 1)));
+                rift.setAlpha(0.7);
+            
+                // Set a timer to remove the rift after a certain duration
+                this.time.delayedCall(3000 + (500 * (riftCount - 1)), () => {
+                    rift.destroy();
+                });
             }
         }
     }

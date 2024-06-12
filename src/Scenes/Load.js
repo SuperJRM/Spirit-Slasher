@@ -18,22 +18,55 @@ class Load extends Phaser.Scene {
         this.load.image("heartEmpty", "heartEmpty.png");
 
         // Load item images (Credit: Tyler)
-        this.load.image("money", "money.png");
-        this.load.spritesheet("crystal", "weapon_crystal.png", {
+        this.load.image("treasure", "treasure.png");
+        this.load.image("Fireworks", "fireworks.png");
+        this.load.image("Health", "health.png");
+        this.load.image("Crystal", "crystal.png");
+        this.load.image("Rift", "rift.png");
+        this.load.spritesheet("crystal_animation", "weapon_crystal.png", {
             frameWidth: 16,
             frameHeight: 16
         });
-        this.load.spritesheet("fireworks", "weapon_fireworks.png", {
+        this.load.spritesheet("fireworks_animation", "weapon_fireworks.png", {
             frameWidth: 16,
             frameHeight: 16
         });
-        this.load.spritesheet("rift", "weapon_rift.png", {
+        this.load.spritesheet("rift_animation", "weapon_rift.png", {
+            frameWidth: 16,
+            frameHeight: 16
+        });
+        this.load.spritesheet("health_animation", "item_health.png", {
             frameWidth: 16,
             frameHeight: 16
         });
     }
 
     create() {
+        // Define animations for Fireworks
+        this.anims.create({
+            key: 'fireworks_animation',
+            frames: this.anims.generateFrameNumbers('fireworks_animation', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'crystal_animation',
+            frames: this.anims.generateFrameNumbers('crystal_animation', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'rift_animation',
+            frames: this.anims.generateFrameNumbers('rift_animation', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'health_animation',
+            frames: this.anims.generateFrameNumbers('health_animation', { start: 0, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNames('platformer_characters', {
