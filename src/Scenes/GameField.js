@@ -238,21 +238,27 @@ class GameField extends Phaser.Scene {
 
         // Enemy Movement and sprite direction
         // Enemies will chase the player avatar down
+        // Higher wave mean faster monsters
+        let enemySpeed = 0.25 + (0.04 * (this.wave));
+        if (enemySpeed >= 0.8) { // Cap is 0.8 enemy speed so that enemies aren't super duper fast
+            enemySpeed = 0.8;
+        }
+        
         for (var i = 0; i < my.sprite.monster.length; i++) {
             for (var j = 0; j < my.sprite.monster[i].length; j++) {
                 let enemy = my.sprite.monster[i][j];
                 if (enemy.x < my.sprite.player.x) {
-                    enemy.x += .25;
+                    enemy.x += enemySpeed;
                     enemy.setFlip(true, false);
                 }
                 else {
-                    enemy.x -= .25;
+                    enemy.x -= enemySpeed;
                     enemy.resetFlip();
                 }
                     
                 if (enemy.y < my.sprite.player.y) {
-                    enemy.y += .25;}
-                else {enemy.y -= .25;}
+                    enemy.y += enemySpeed;}
+                else {enemy.y -= enemySpeed;}
             }
         }
 
