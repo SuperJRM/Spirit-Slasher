@@ -25,7 +25,7 @@ let config = {
     },
     width: 1440,
     height: 900,
-    scene: [Load, GameField]
+    scene: [Load, TitleScreen, EndScreen, GameField]
 }
 
 var cursors;

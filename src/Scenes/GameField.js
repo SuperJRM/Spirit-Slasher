@@ -5,18 +5,18 @@ class GameField extends Phaser.Scene {
 
     init() {
         // variables and settings
-        this.playerSpeed = 5.0; // Default: 5.0
+        this.playerSpeed = 3.0; // Default: 5.0
         this.scale = 3.0; // Default: 3.0
-        this.itemSpawnSpeed = 1000; // Default: 10000 (10 seconds)
+        this.itemSpawnSpeed = 10000; // Default: 10000 (10 seconds)
         this.maxHealth = 3; // Default: 3 (3 Hearts)
         this.enemyX = 32; // Default: 32
         this.enemyY = 32; // Default: 32
-        this.enemySpawnSpeed = 1000; // Default: 1000
+        this.enemySpawnSpeed = 1500; // Default: 1500 (1.5 seconds)
         this.enemySpawnCheck = true; // Default: true
         this.wave = 1; // Default: 1
-        this.waveSpeed = 60000; // Default: 60000
-        this.maxMonsters = 100; // Default: 100
-        this.maxBullets = 120; // Default: 120
+        this.waveSpeed = 60000; // Default: 60000 (60 seconds)
+        this.maxMonsters = 120; // Default: 120
+        this.maxBullets = 300; // Default: 300
         this.defaultInvincibilityTimer = 15; // Default: 15, for 1.5 seconds of invincibility
 
         // Item names
@@ -27,6 +27,7 @@ class GameField extends Phaser.Scene {
         // Create a new tilemap game object which uses 16x16 pixel tiles, and is
         // 80 tiles wide and 20 tiles tall.
         this.map = this.add.tilemap("gameFieldMap", 16, 16, 80, 20);
+        this.physics.world.setBounds(0,0, 80*16*3 , 20*16*3);
 
         // Add a tileset to the map, map made in Tiled
         this.tileset = this.map.addTilesetImage("dungeon_tileset_packed", "dungeon_tilesetmap_packed");
@@ -67,8 +68,7 @@ class GameField extends Phaser.Scene {
         cursors = this.input.keyboard.createCursorKeys();
 
         // Set up camera for the screen
-        this.cameras.main.setBounds(0, 0, this.map.widthInPixels*3, this.map.heightInPixels*3);
-        //this.cameras.main.setBounds(0, 0, 10000, this.map.heightInPixels);
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels*3, (this.map.heightInPixels*3));
         this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25); // (target, [,roundPixels][,lerpX][,lerpY])
         this.cameras.main.setDeadzone(50, 50);
         this.cameras.main.setZoom(this.SCALE);
@@ -78,6 +78,10 @@ class GameField extends Phaser.Scene {
             this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true
             this.physics.world.debugGraphic.clear()
         }, this); */
+
+        // Debug view removal
+        this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true
+        this.physics.world.debugGraphic.clear()
 
         
         // Finished: Add createFromObjects here
@@ -194,45 +198,44 @@ class GameField extends Phaser.Scene {
     }
 
     update() {
+        // Player control and animations
         if(cursors.left.isDown) {
             if (my.sprite.player.x > (my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x -= this.playerSpeed;
             }
+            my.sprite.player.faceLeft = true;
             my.sprite.player.resetFlip();
             my.sprite.player.anims.play('walk', true);
         } 
-        
         if(cursors.right.isDown) {
-            if (my.sprite.player.x < (3840+my.sprite.player.displayWidth/2)) {
+            if (my.sprite.player.x < (2350+my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x += this.playerSpeed;
             }
+            my.sprite.player.faceLeft = false;
             my.sprite.player.setFlip(true, false);
             my.sprite.player.anims.play('walk', true);
-        } 
-        
+        }         
         if(cursors.up.isDown) {
-            if (my.sprite.player.y > (my.sprite.player.displayHeight/2)) {
+            if (my.sprite.player.y > (my.sprite.player.displayHeight/2)+48) {
                 my.sprite.player.y -= this.playerSpeed;
             }
             my.sprite.player.anims.play('walk', true);
-        } 
-        
+        }         
         if(cursors.down.isDown) {
-            if (my.sprite.player.y < (960+my.sprite.player.displayHeight/2)) {
+            if (my.sprite.player.y < (908+my.sprite.player.displayHeight/2)) {
                 my.sprite.player.y += this.playerSpeed;
             }
             my.sprite.player.anims.play('walk', true);
-        } 
-        
+        }         
         if(cursors.left.isUp && cursors.right.isUp && cursors.up.isUp && cursors.down.isUp) {
             my.sprite.player.anims.play('idle');
         }
         
-        // Enemy spawning
+        // Enemy spawning in waves
         if ((this.wave % 3) == 0) {
             if (this.enemySpawnCheck == true) {
                 if (my.sprite.zombies.length < this.maxMonsters) {
-                    my.sprite.zombies.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    my.sprite.zombies.push(this.physics.add.sprite(this.enemyX, this.enemyY, "Zombie").setScale(this.scale));
                     let zombie = my.sprite.zombies[my.sprite.zombies.length-1];
                     zombie.health = 5;
                     zombie.visible = true;
@@ -243,7 +246,7 @@ class GameField extends Phaser.Scene {
         else if ((this.wave % 2) == 0) {
             if (this.enemySpawnCheck == true) {
                 if (my.sprite.skeletons.length < this.maxMonsters) {
-                    my.sprite.skeletons.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    my.sprite.skeletons.push(this.physics.add.sprite(this.enemyX, this.enemyY, "Skeleton").setScale(this.scale));
                     let skeleton = my.sprite.skeletons[my.sprite.skeletons.length-1];
                     skeleton.health = 3;
                     skeleton.visible = true;
@@ -254,7 +257,7 @@ class GameField extends Phaser.Scene {
         else {
             if (this.enemySpawnCheck == true) {
                 if (my.sprite.bats.length < this.maxMonsters) {
-                    my.sprite.bats.push(this.physics.add.sprite(this.enemyX, this.enemyY, "item"));
+                    my.sprite.bats.push(this.physics.add.sprite(this.enemyX, this.enemyY, "Bat").setScale(this.scale));
                     let bat = my.sprite.bats[my.sprite.bats.length-1];
                     bat.health = 1;
                     bat.visible = true;
@@ -263,44 +266,61 @@ class GameField extends Phaser.Scene {
             }
         }
 
-        // Enemy Movement
+        // Enemy Movement and sprite direction
         for (var i = 0; i < my.sprite.monster.length; i++) {
             for (var j = 0; j < my.sprite.monster[i].length; j++) {
                 let enemy = my.sprite.monster[i][j];
                 if (enemy.x < my.sprite.player.x) {
-                    enemy.x++;}
-                else {enemy.x--;}
+                    enemy.x += .25;
+                    enemy.setFlip(true, false);
+                }
+                else {
+                    enemy.x -= .25;
+                    enemy.resetFlip();
+                }
                     
                 if (enemy.y < my.sprite.player.y) {
-                    enemy.y++;}
-                else {enemy.y--;}
+                    enemy.y += .25;}
+                else {enemy.y -= .25;}
             }
         }
 
         // Bullet collision
-        for (let bullet of my.sprite.bullet) {
+        for (let bullet of my.sprite.bullet) { 
+            // Checks each bullet and removes those out of bounds
+            let indexBullet = my.sprite.bullet.findIndex(Ibullet => Ibullet === bullet);
+            if (bullet.x > (3840+bullet.displayWidth) || bullet.x < -(bullet.displayWidth) || bullet.y < 16+(bullet.displayHeight) || bullet.y > (900+bullet.displayHeight)) {
+                bullet.x = -100
+                bullet.y = -100
+                bullet.visible = false;
+                bullet.destroy();
+                my.sprite.bullet.splice(indexBullet, 1);
+            }
+            // Iterates through each enemy, dealing damage and removing dead bullets/enemies upon collision
             for (var i = 0; i < my.sprite.monster.length; i++) {
                 for (var j = 0; j < my.sprite.monster[i].length; j++) {
                     let enemy = my.sprite.monster[i][j];
                     if (this.collides(enemy, bullet)) {
-                        //bullet.setVelocity(0)
                         bullet.x = -100
                         bullet.y = -100
+                        bullet.visible = false;
                         bullet.destroy();
+                        my.sprite.bullet.splice(indexBullet, 1);
                         enemy.health--;
                         if (enemy.health <= 0) {
                             enemy.x = -200;
-                            enemy.y = -200
+                            enemy.y = -200;
+                            enemy.visible = false;
+                            this.sound.play("PointSFX", {
+                                volume: .25   // Can adjust volume using this, goes from 0 to 1
+                            });
                             enemy.destroy();
+                            my.sprite.monster[i].splice(j, 1);
                         }
                     }
                 }
             }
         }
-
-        // Bullet Despawning
-        my.sprite.bullet = my.sprite.bullet.filter((bullet) => (bullet.x < (3840+bullet.displayWidth) && bullet.x > -(bullet.displayWidth) 
-        && bullet.y > -(bullet.displayHeight) && bullet.y < (960+bullet.displayHeight)));
 
         // Update health values and position underneath the player
         this.updateUI();
@@ -315,6 +335,15 @@ class GameField extends Phaser.Scene {
                 if (this.collides(my.sprite.player, enemy) && !this.invincibilityTimer) {
                     // Player collides with enemy, decrement player's health
                     my.sprite.player.health -= 1;
+                    this.sound.play("DMGSFX", {
+                        volume: 1   // Can adjust volume using this, goes from 0 to 1
+                    });
+                    if (my.sprite.player.health <= 0) {
+                        this.sound.play("DeadSFX", {
+                            volume: 1   // Can adjust volume using this, goes from 0 to 1
+                        });
+                        this.scene.start("endScreenScene");
+                    }
                     this.invincibilityTimer = this.defaultInvincibilityTimer;
                 }
             }
@@ -393,7 +422,7 @@ class GameField extends Phaser.Scene {
     spawnItem() {
         // Randomly generate position for the item within the game world
         const x = Phaser.Math.RND.between(0, this.game.config.width);
-        const y = Phaser.Math.RND.between(0, this.game.config.height);
+        const y = Phaser.Math.RND.between(48, this.game.config.height);
 
         // Randomly select an item from the this.items array
         const itemName = this.items[Phaser.Math.RND.between(0, this.items.length - 1)];
@@ -402,6 +431,9 @@ class GameField extends Phaser.Scene {
         if (["Crystal", "Fireworks", "Health", "Rift"].includes(itemName)) {
             // Play the corresponding animation
             item.anims.play(itemName.toLowerCase() + '_animation');
+            this.sound.play("ItemSFX", {
+                volume: 1   // Can adjust volume using this, goes from 0 to 1
+            });
         }
 
         // Player collects item when touching the item
@@ -413,6 +445,9 @@ class GameField extends Phaser.Scene {
                 if (itemName === "Health") {
                     my.sprite.player.health = this.maxHealth;
                     console.log("Player health restored to 3 hearts.");
+                    this.sound.play("HealSFX", {
+                        volume: 1   // Can adjust volume using this, goes from 0 to 1
+                    });
                 }
                 item.destroy();
                 if (!this.playerInventory[itemName]) {
@@ -436,12 +471,22 @@ class GameField extends Phaser.Scene {
 
         if (this.playerInventory.hasOwnProperty("Crystal")) { // Check if Item is owned
             let delay = 0; // Initial delay for the first bullet
-
+            this.sound.play("CrystalSFX", {
+                volume: 1   // Can adjust volume using this, goes from 0 to 1
+            });
             for (let i = 0; i < crystalCount; i++) {
                 setTimeout(() => {
                     if (my.sprite.bullet.length < this.maxBullets) {
-                        const bullet = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y - (my.sprite.player.displayHeight / 2), "heartEmpty");
-                        bullet.setVelocity(200 + (i * 50), 0);
+                        const bullet = this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y - (my.sprite.player.displayHeight / 2), "Crystal").setScale(2).setAlpha(0.9);
+                        bullet.visible = true;
+                        if (my.sprite.player.faceLeft == true) {
+                            bullet.setVelocity(-200 - (i * 50), 0);
+                            bullet.setAngle(-90)
+                        }
+                        else {
+                            bullet.setVelocity(200 + (i * 50), 0);
+                            bullet.setAngle(90)
+                        }
                         my.sprite.bullet.push(bullet);
                     }
                 }, delay);
@@ -467,11 +512,14 @@ class GameField extends Phaser.Scene {
                 const velocityY = Math.sin(angle) * 200;
 
                 if (my.sprite.bullet.length < this.maxBullets) {
-                    my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "fireworks"));
+                    my.sprite.bullet.push(this.physics.add.sprite(my.sprite.player.x, my.sprite.player.y-(my.sprite.player.displayHeight/2), "Fireworks").setScale(2).setAlpha(0.9));
                 }
                 let bullet = my.sprite.bullet[my.sprite.bullet.length-1];
                 bullet.setVelocity(velocityX, velocityY);
             }
+            this.sound.play("FireworkSFX", {
+                volume: 1   // Can adjust volume using this, goes from 0 to 1
+            });
         }
     }
 
@@ -490,7 +538,7 @@ class GameField extends Phaser.Scene {
                 // Get the last added rift sprite
                 let rift = my.sprite.bullet[my.sprite.bullet.length - 1];
                 rift.anims.play("rift_animation");
-                rift.setScale(5 + (2 * (riftCount - 1)));
+                rift.setScale(5 + ((riftCount - 1)));
                 rift.setAlpha(0.7);
             
                 // Set a timer to remove the rift after a certain duration
@@ -498,6 +546,9 @@ class GameField extends Phaser.Scene {
                     rift.destroy();
                 });
             }
+            this.sound.play("RiftSFX", {
+                volume: 1   // Can adjust volume using this, goes from 0 to 1
+            });
         }
     }
 }

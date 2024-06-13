@@ -23,6 +23,13 @@ class Load extends Phaser.Scene {
         this.load.image("Health", "health.png");
         this.load.image("Crystal", "crystal.png");
         this.load.image("Rift", "rift.png");
+
+        // Load enemy images (Credit: 0x72)
+        this.load.image("Bat", "monster_bat.png");
+        this.load.image("Skeleton", "monster_skelet.png");
+        this.load.image("Zombie", "monster_zombie_green.png");
+
+        // Load item animations (Credit: Tyler)
         this.load.spritesheet("crystal_animation", "weapon_crystal.png", {
             frameWidth: 16,
             frameHeight: 16
@@ -39,10 +46,21 @@ class Load extends Phaser.Scene {
             frameWidth: 16,
             frameHeight: 16
         });
+
+        // Load Audio (Credit: Kenney's)
+        this.load.audio("CrystalSFX", "CrystalSFX.ogg");
+        this.load.audio("HealSFX", "HealSFX.ogg");
+        this.load.audio("DeadSFX", "DeadSFX.ogg");
+        this.load.audio("DMGSFX", "DMGSFX.ogg");
+        this.load.audio("FireworkSFX", "FireworkSFX.ogg");
+        this.load.audio("RiftSFX", "RiftSFX.ogg");
+        this.load.audio("ItemSFX", "ItemSFX.ogg");
+        this.load.audio("SelectSFX", "SelectSFX.ogg");
+        this.load.audio("PointSFX", "PointSFX.ogg");
     }
 
     create() {
-        // Define animations for Fireworks
+        // Define animations for items
         this.anims.create({
             key: 'fireworks_animation',
             frames: this.anims.generateFrameNumbers('fireworks_animation', { start: 0, end: 7 }),
@@ -67,6 +85,8 @@ class Load extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
+
+        // Create animations for player movement
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNames('platformer_characters', {
@@ -79,7 +99,6 @@ class Load extends Phaser.Scene {
             frameRate: 15,
             repeat: -1
         });
-
         this.anims.create({
             key: 'idle',
             defaultTextureKey: "platformer_characters",
@@ -89,11 +108,11 @@ class Load extends Phaser.Scene {
             repeat: -1
         });
 
-         // ...and pass to the next Scene
-         this.scene.start("gameFieldScene");
+        // Enter Title Screen Scene
+        this.scene.start("titleScreenScene")
     }
 
-    // Never get here since a new scene is started in create()
+    // New scene is started in create()
     update() {
     }
 }
