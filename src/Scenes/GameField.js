@@ -5,7 +5,7 @@ class GameField extends Phaser.Scene {
 
     init() {
         // variables and settings
-        this.playerSpeed = 3.0; // Default: 5.0
+        this.playerSpeed = 3.0; // Default: 3.0
         this.scale = 3.0; // Default: 3.0
         this.itemSpawnSpeed = 10000; // Default: 10000 (10 seconds)
         this.maxHealth = 3; // Default: 3 (3 Hearts)
@@ -20,7 +20,7 @@ class GameField extends Phaser.Scene {
         this.defaultInvincibilityTimer = 15; // Default: 15, for 1.5 seconds of invincibility
 
         // Item names
-        this.items = ["Crystal", "Fireworks", "Health", "Rift"];
+        this.items = ["Crystal", "Fireworks", "Sunshine", "Rift"];
     }
 
     create() {
@@ -44,7 +44,7 @@ class GameField extends Phaser.Scene {
             collides: true
         });
 
-        // Set up player avatar
+        // Set up player and monster avatars
         my.sprite.player = this.physics.add.sprite(game.config.width/4, game.config.height/2, "platformer_characters", "tile_0000.png").setScale(SCALE)
         my.sprite.player.setCollideWorldBounds(true);
         my.sprite.bullet = [];
@@ -52,14 +52,6 @@ class GameField extends Phaser.Scene {
         my.sprite.skeletons = [];
         my.sprite.zombies = [];
         my.sprite.monster = [my.sprite.bats, my.sprite.skeletons, my.sprite.zombies];
-
-        /* Set up bullets
-        for (let i=0; i < this.maxBullets; i++) {
-            // create a sprite which is offscreen and invisible
-            my.sprite.bullet.push(this.add.sprite(-100, -100, "heartEmpty"));
-            my.sprite.bullet[i].visible = false;
-            my.sprite.bullet[i].active = false;
-        }*/
 
         // Make player avatar collide with collideable layer
         this.physics.add.collider(my.sprite.player, this.collideableLayer);
@@ -73,48 +65,20 @@ class GameField extends Phaser.Scene {
         this.cameras.main.setDeadzone(50, 50);
         this.cameras.main.setZoom(this.SCALE);
 
-        /* debug key listener (assigned to D key)
-        this.input.keyboard.on('keydown-D', () => {
-            this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true
-            this.physics.world.debugGraphic.clear()
-        }, this); */
-
         // Debug view removal
         this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true
         this.physics.world.debugGraphic.clear()
-
         
-        // Finished: Add createFromObjects here
-        // Find coins in the "Objects" layer in Phaser
-        // Look for them by finding objects with the name "coin"
-        // Assign the coin texture from the tilemap_sheet sprite sheet
-        // Phaser docs:
-        // https://newdocs.phaser.io/docs/3.80.0/focus/Phaser.Tilemaps.Tilemap-createFromObjects
-
-        // Add animation for fire
-        // this.fire = this.map.createFromObjects("Objects", {
-        //     name: "fireTop",
-        //     key: "dungeon_tilesetmap_packed"
-        // });
-
-        // this.anims.create({
-        //     key: "fireAnimation",
-        //     frames: [
-        //         { key: "dungeon_tilesetmap_packed", frame: 151 },
-        //         { key: "dungeon_tilesetmap_packed", frame: 152 }
-        //     ],
-        //     frameRate: 5,
-        //     repeat: -1 // Infinitely
-        // });
-
-        // Create a Phaser group out of the array this.coins
-        // This will be used for collision detection below.
-
-        // Inventory system that keeps track of what items the player has, and how many
+        /* Start of inventory system
+         * Inventory system will hold one of four items from the this.items array
+         * Initialized at the top. Players can pick up one of the four and have it
+         * permanently affect how they play
+         */
         this.playerInventory = {};
 
         /* Timer that periodically spawns an Item
-         * The Player can touch the Item in the world and pick it up, adding it to inventory */
+         * The Player can touch the Item in the world and pick it up, adding it to inventory
+         */
         this.spawnItemTimer = this.time.addEvent({
             delay: this.itemSpawnSpeed,
             callback: this.spawnItem,
@@ -151,6 +115,7 @@ class GameField extends Phaser.Scene {
         });
 
         // Timer that changes wave count
+        // Default changes the waves to get more intense every minute
         this.waveTimer = this.time.addEvent({
             delay: this.waveSpeed, // 60000 = 60 seconds
             callback: () => {
@@ -179,6 +144,8 @@ class GameField extends Phaser.Scene {
         });
 
         // Timer for invincibility frames
+        // If player is hit, checked somewhere else, will make invincibilityTimer count down
+        // While this is happening, player avatar flickers and is immune to damage
         this.invincibilityFrameTimer = this.time.addEvent({
             delay: 100, // 100 = 0.1 seconds
             callback: () => {
@@ -193,13 +160,16 @@ class GameField extends Phaser.Scene {
             loop: true // Repeat
         });
 
-        // Create UI
+        /* Create UI
+         * Hovers directly beneath the player avatar, holds both health and inventory info
+         * Then is constantly updated in update() with updateUI()
+         */
         this.createUI();
     }
 
     update() {
         // Player control and animations
-        if(cursors.left.isDown) {
+        if(cursors.left.isDown) { // Holding left makes player go left
             if (my.sprite.player.x > (my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x -= this.playerSpeed;
             }
@@ -207,7 +177,7 @@ class GameField extends Phaser.Scene {
             my.sprite.player.resetFlip();
             my.sprite.player.anims.play('walk', true);
         } 
-        if(cursors.right.isDown) {
+        if(cursors.right.isDown) { // Holding right makes player go right
             if (my.sprite.player.x < (2350+my.sprite.player.displayWidth/2)) {
                 my.sprite.player.x += this.playerSpeed;
             }
@@ -215,18 +185,18 @@ class GameField extends Phaser.Scene {
             my.sprite.player.setFlip(true, false);
             my.sprite.player.anims.play('walk', true);
         }         
-        if(cursors.up.isDown) {
+        if(cursors.up.isDown) { // Holding up makes player go up
             if (my.sprite.player.y > (my.sprite.player.displayHeight/2)+48) {
                 my.sprite.player.y -= this.playerSpeed;
             }
             my.sprite.player.anims.play('walk', true);
         }         
-        if(cursors.down.isDown) {
+        if(cursors.down.isDown) { // Holding down makes player go down
             if (my.sprite.player.y < (908+my.sprite.player.displayHeight/2)) {
                 my.sprite.player.y += this.playerSpeed;
             }
             my.sprite.player.anims.play('walk', true);
-        }         
+        }
         if(cursors.left.isUp && cursors.right.isUp && cursors.up.isUp && cursors.down.isUp) {
             my.sprite.player.anims.play('idle');
         }
@@ -267,6 +237,7 @@ class GameField extends Phaser.Scene {
         }
 
         // Enemy Movement and sprite direction
+        // Enemies will chase the player avatar down
         for (var i = 0; i < my.sprite.monster.length; i++) {
             for (var j = 0; j < my.sprite.monster[i].length; j++) {
                 let enemy = my.sprite.monster[i][j];
@@ -322,7 +293,7 @@ class GameField extends Phaser.Scene {
             }
         }
 
-        // Update health values and position underneath the player
+        // Update the UI
         this.updateUI();
 
         /* When Player makes contact with enemy, Player loses 1 health and starts
@@ -359,11 +330,13 @@ class GameField extends Phaser.Scene {
 
     // Create the initial health bar and item counter
     createUI() {
-        // Create a container to hold the hearts
+        // Create a container to hold the hearts and inventory
         this.healthBarContainer = this.add.container();
         this.itemContainer = this.add.container();
 
+        // For each heart (Default: 3), make a heart below the player
         for (let i = 0; i < this.maxHealth; i++) {
+            // Since player starts out full health always, no need to check for damaged hearts
             const heart = this.add.sprite(i * 30, 0, "heart").setScale(1.5);
             this.healthBarContainer.add(heart);
         }
@@ -386,10 +359,9 @@ class GameField extends Phaser.Scene {
         }
     
         // Update item icons based on player's inventory
-        this.itemContainer.removeAll(true); // Remove existing item icons
+        this.itemContainer.removeAll(true); // Remove existing item icons to start anew
     
         let iconX = 0;
-
         for (const itemName in this.playerInventory) {
             if (this.playerInventory.hasOwnProperty(itemName)) {
                 const itemCount = this.playerInventory[itemName];
@@ -398,12 +370,13 @@ class GameField extends Phaser.Scene {
                     // Add the item icon
                     const itemIcon = this.add.sprite(iconX, 0, itemName).setScale(1.5);
                     this.itemContainer.add(itemIcon);
+                    // Add amount of item owned in inventory (at least 1)
+                    const itemText = this.add.text(iconX, 20, itemCount.toString(),
+                        { fontSize: '16px'
+                    });
+                    this.itemContainer.add(itemText);
         
-                    // Add the item quantity text
-                    const itemQuantityText = this.add.text(iconX, 20, itemCount.toString(), { fontSize: '16px', fill: '#ffffff' });
-                    this.itemContainer.add(itemQuantityText);
-        
-                    iconX += 23; // Adjust the spacing between item icons as needed
+                    iconX += 23; // Adjust the spacing between item icons as needed, default: 23
                 }
             }
         }
@@ -412,7 +385,6 @@ class GameField extends Phaser.Scene {
         const healthX = my.sprite.player.x - (this.healthBarContainer.width / 2) - 30;
         const healthY = my.sprite.player.y + 40;
         this.healthBarContainer.setPosition(healthX, healthY);
-    
         const itemContainerX = healthX;
         const itemContainerY = healthY + 25;
         this.itemContainer.setPosition(itemContainerX, itemContainerY);
@@ -428,7 +400,7 @@ class GameField extends Phaser.Scene {
         const itemName = this.items[Phaser.Math.RND.between(0, this.items.length - 1)];
         const item = this.physics.add.sprite(x, y, itemName).setScale(3);
 
-        if (["Crystal", "Fireworks", "Health", "Rift"].includes(itemName)) {
+        if (["Crystal", "Fireworks", "Sunshine", "Rift"].includes(itemName)) {
             // Play the corresponding animation
             item.anims.play(itemName.toLowerCase() + '_animation');
             this.sound.play("ItemSFX", {
@@ -441,9 +413,12 @@ class GameField extends Phaser.Scene {
         if (my.sprite.player) {
             this.physics.add.overlap(my.sprite.player, item, () => {
                 // Sunshine Item
-                // Upon pickup, restore health to max value
-                if (itemName === "Health") {
+                // Upon pickup, restore health to max value, and slightly increase speed
+                if (itemName === "Sunshine") {
                     my.sprite.player.health = this.maxHealth;
+                    if (this.playerSpeed < 6.0) {
+                        this.playerSpeed += 0.3;
+                    }
                     console.log("Player health restored to 3 hearts.");
                     this.sound.play("HealSFX", {
                         volume: 1   // Can adjust volume using this, goes from 0 to 1

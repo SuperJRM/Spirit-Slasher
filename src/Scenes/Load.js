@@ -20,7 +20,7 @@ class Load extends Phaser.Scene {
         // Load item images (Credit: Tyler)
         this.load.image("treasure", "treasure.png");
         this.load.image("Fireworks", "fireworks.png");
-        this.load.image("Health", "health.png");
+        this.load.image("Sunshine", "sunshine.png");
         this.load.image("Crystal", "crystal.png");
         this.load.image("Rift", "rift.png");
 
@@ -42,7 +42,7 @@ class Load extends Phaser.Scene {
             frameWidth: 16,
             frameHeight: 16
         });
-        this.load.spritesheet("health_animation", "item_health.png", {
+        this.load.spritesheet("sunshine_animation", "item_sunshine.png", {
             frameWidth: 16,
             frameHeight: 16
         });
@@ -80,8 +80,8 @@ class Load extends Phaser.Scene {
             repeat: -1
         });
         this.anims.create({
-            key: 'health_animation',
-            frames: this.anims.generateFrameNumbers('health_animation', { start: 0, end: 7 }),
+            key: 'sunshine_animation',
+            frames: this.anims.generateFrameNumbers('sunshine_animation', { start: 0, end: 7 }),
             frameRate: 10,
             repeat: -1
         });
