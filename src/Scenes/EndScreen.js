@@ -37,6 +37,32 @@ class EndScreen extends Phaser.Scene {
             }
         ).setOrigin(0.5).setScale(this.scale);
 
+        this.credits = this.add.text(740, 725, 'Credits:',
+            { 
+                fontFamily: 'Garamond, serif' 
+            }
+        ).setOrigin(0.5).setScale(2).setTint(0xCD001A);
+        this.credits1 = this.add.text(740, 775, 'Kenny for health icons, player sprites and animation, and SFX',
+            { 
+                fontFamily: 'Garamond, serif' 
+            }
+        ).setOrigin(0.5).setScale(2).setTint(0xCD001A);
+        this.credits2 = this.add.text(740, 800, 'Tyler Torrella for item sprites and animation',
+            { 
+                fontFamily: 'Garamond, serif' 
+            }
+        ).setOrigin(0.5).setScale(2).setTint(0xCD001A);
+        this.credits3 = this.add.text(740, 825, '0x72 for enemies & background sprites',
+            { 
+                fontFamily: 'Garamond, serif' 
+            }
+        ).setOrigin(0.5).setScale(2).setTint(0xCD001A);
+        this.credits3 = this.add.text(740, 850, 'Game made by Tyler Torrella and Jason Rangel-Martinez',
+            { 
+                fontFamily: 'Garamond, serif' 
+            }
+        ).setOrigin(0.5).setScale(2).setTint(0xCD001A);
+
         // Select
         this.selectBat = this.add.sprite(570, 620, "Bat", "monster_bat.png").setScale(2);
 
